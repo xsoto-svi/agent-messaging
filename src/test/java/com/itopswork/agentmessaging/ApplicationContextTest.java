@@ -8,7 +8,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @SpringBootTest(properties = {
         "app.reply-mode=echo",
         "app.telegram.token=test-token",
-        "spring.task.scheduling.enabled=false",
+        "app.telegram.webhook-url=https://example.test/telegram/webhook",
+        "app.telegram.webhook-secret=test-secret",
         "logging.level.root=WARN"
 })
 class ApplicationContextTest {
@@ -17,5 +18,7 @@ class ApplicationContextTest {
 
     @Test
     void startsWithEchoMode() {
+        org.mockito.Mockito.verify(telegramApi).setWebhook(
+                "https://example.test/telegram/webhook", "test-secret");
     }
 }

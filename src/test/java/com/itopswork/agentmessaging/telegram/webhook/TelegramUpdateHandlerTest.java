@@ -1,11 +1,12 @@
-package com.itopswork.agentmessaging.telegram;
+package com.itopswork.agentmessaging.telegram.webhook;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.itopswork.agentmessaging.messaging.MessagingService;
-import com.itopswork.agentmessaging.model.IncomingMessage;
+import com.itopswork.agentmessaging.messaging.IncomingMessage;
+import com.itopswork.agentmessaging.telegram.TelegramApi;
 import org.junit.jupiter.api.Test;
 
 class TelegramUpdateHandlerTest {
@@ -35,13 +36,13 @@ class TelegramUpdateHandlerTest {
 
     @Test
     void skipsMalformedMessageWithoutChatId() {
-        handler.receive(new TelegramDtos.Update(8L,
-                new TelegramDtos.Message(new TelegramDtos.Chat(null), new TelegramDtos.User(99L), "hello")));
+        handler.receive(new TelegramUpdate(8L,
+                new TelegramUpdate.Message(new TelegramUpdate.Chat(null), new TelegramUpdate.User(99L), "hello")));
         verifyNoInteractions(api, messaging);
     }
 
-    private TelegramDtos.Update update(long id, String text) {
-        return new TelegramDtos.Update(id,
-                new TelegramDtos.Message(new TelegramDtos.Chat(12345L), new TelegramDtos.User(99L), text));
+    private TelegramUpdate update(long id, String text) {
+        return new TelegramUpdate(id,
+                new TelegramUpdate.Message(new TelegramUpdate.Chat(12345L), new TelegramUpdate.User(99L), text));
     }
 }

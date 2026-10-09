@@ -1,4 +1,4 @@
-package com.itopswork.agentmessaging.ai;
+package com.itopswork.agentmessaging.openai;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -7,9 +7,11 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
@@ -56,6 +58,41 @@ class OpenAiServiceTest {
 
         assertThrows(IllegalStateException.class,
                 () -> new OpenAiService(builder.build(), "test-model").generate("hello"));
+        server.verify();
+    }
+
+    @Test
+    void reportsQuotaCodeFrom429WithoutLoggingRawErrorBody() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://api.openai.com/v1");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("""
+                                {"error":{"message":"Account-specific details", "type":"insufficient_quota",
+                                  "code":"credit_balance_exhausted"}}
+                                """));
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> new OpenAiService(builder.build(), "test-model").generate("hello"));
+
+        assertEquals("OpenAI request failed: status=429 code=credit_balance_exhausted", error.getMessage());
+        server.verify();
+    }
+
+    @Test
+    void fallsBackToRateLimitTypeWhenCodeIsAbsent() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://api.openai.com/v1");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(requestTo("https://api.openai.com/v1/responses"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body("{\"error\":{\"type\":\"rate_limit_error\"}}"));
+
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> new OpenAiService(builder.build(), "test-model").generate("hello"));
+
+        assertEquals("OpenAI request failed: status=429 code=rate_limit_error", error.getMessage());
         server.verify();
     }
 }

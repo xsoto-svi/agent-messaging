@@ -1,4 +1,4 @@
-package com.itopswork.agentmessaging.ai;
+package com.itopswork.agentmessaging.openai;
 
 import com.itopswork.agentmessaging.messaging.ReplyGenerator;
 import java.net.http.HttpClient;
@@ -14,6 +14,7 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 @Service
 @ConditionalOnProperty(name = "app.reply-mode", havingValue = "ai")
@@ -63,10 +64,39 @@ public class OpenAiService implements ReplyGenerator {
                 throw new IllegalStateException("OpenAI returned no text");
             }
             return text;
+        } catch (RestClientResponseException ex) {
+            String code = errorCode(ex);
+            log.warn("OpenAI request failed: status={} code={}", ex.getStatusCode().value(), code);
+            throw new IllegalStateException("OpenAI request failed: status="
+                    + ex.getStatusCode().value() + " code=" + code, ex);
         } catch (RestClientException ex) {
             log.warn("OpenAI request failed: {}", ex.getClass().getSimpleName());
             throw new IllegalStateException("OpenAI request failed", ex);
         }
+    }
+
+    private String errorCode(RestClientResponseException ex) {
+        try {
+            OpenAiErrorResponse response = ex.getResponseBodyAs(OpenAiErrorResponse.class);
+            if (response != null && response.error() != null) {
+                String code = response.error().code();
+                if (code == null) {
+                    code = response.error().type();
+                }
+                if (code != null && code.matches("[A-Za-z0-9_-]{1,80}")) {
+                    return code;
+                }
+            }
+        } catch (RuntimeException ignored) {
+            // A malformed error body must not hide the original HTTP failure.
+        }
+        return "unknown";
+    }
+
+    private record OpenAiErrorResponse(OpenAiError error) {
+    }
+
+    private record OpenAiError(String code, String type) {
     }
 
     public record OpenAiResponse(String status, List<OutputItem> output) {

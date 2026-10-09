@@ -8,8 +8,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @SpringBootTest(properties = {
         "app.reply-mode=ai",
         "app.telegram.token=test-token",
+        "app.telegram.webhook-url=https://example.test/telegram/webhook",
+        "app.telegram.webhook-secret=test-secret",
         "app.openai.api-key=test-key",
-        "spring.task.scheduling.enabled=false",
         "logging.level.root=WARN"
 })
 class AiApplicationContextTest {

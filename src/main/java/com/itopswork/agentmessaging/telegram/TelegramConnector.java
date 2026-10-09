@@ -1,15 +1,22 @@
 package com.itopswork.agentmessaging.telegram;
 
-import com.itopswork.agentmessaging.messaging.MessageSender;
-import com.itopswork.agentmessaging.model.OutgoingMessage;
+import com.itopswork.agentmessaging.messaging.PlatformMessageSender;
+import com.itopswork.agentmessaging.messaging.OutgoingMessage;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TelegramConnector implements MessageSender {
+@ConditionalOnProperty(name = "app.telegram.enabled", havingValue = "true", matchIfMissing = true)
+public class TelegramConnector implements PlatformMessageSender {
     private final TelegramApi api;
 
     public TelegramConnector(TelegramApi api) {
         this.api = api;
+    }
+
+    @Override
+    public String platform() {
+        return "telegram";
     }
 
     @Override

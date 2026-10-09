@@ -3,7 +3,7 @@ package com.itopswork.agentmessaging.telegram;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import com.itopswork.agentmessaging.model.OutgoingMessage;
+import com.itopswork.agentmessaging.messaging.OutgoingMessage;
 import org.junit.jupiter.api.Test;
 
 class TelegramConnectorTest {

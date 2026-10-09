@@ -1,7 +1,5 @@
 package com.itopswork.agentmessaging.messaging;
 
-import com.itopswork.agentmessaging.model.IncomingMessage;
-import com.itopswork.agentmessaging.model.OutgoingMessage;
 import org.springframework.stereotype.Service;
 
 @Service

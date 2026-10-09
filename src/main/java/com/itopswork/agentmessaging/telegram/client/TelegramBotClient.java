@@ -1,17 +1,19 @@
-package com.itopswork.agentmessaging.telegram;
+package com.itopswork.agentmessaging.telegram.client;
 
+import com.itopswork.agentmessaging.telegram.TelegramApi;
 import java.net.http.HttpClient;
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 @Component
+@ConditionalOnProperty(name = "app.telegram.enabled", havingValue = "true", matchIfMissing = true)
 public class TelegramBotClient implements TelegramApi {
     private final RestClient client;
 
@@ -33,24 +35,21 @@ public class TelegramBotClient implements TelegramApi {
     }
 
     @Override
-    public List<TelegramDtos.Update> getUpdates(long offset) {
-        TelegramDtos.UpdatesResponse response = client.post().uri("/getUpdates")
-                .body(Map.of("offset", offset, "timeout", 20, "allowed_updates", List.of("message")))
-                .retrieve().body(TelegramDtos.UpdatesResponse.class);
-        if (response == null || !response.ok() || response.result() == null) {
-            throw new IllegalStateException("Invalid Telegram getUpdates response");
+    public void setWebhook(String url, String secret) {
+        TelegramBotResponse response = client.post().uri("/setWebhook")
+                .body(Map.of("url", url, "secret_token", secret,
+                        "allowed_updates", List.of("message"), "max_connections", 1))
+                .retrieve().body(TelegramBotResponse.class);
+        if (response == null || !response.ok()) {
+            throw new IllegalStateException("Invalid Telegram setWebhook response");
         }
-        if (Arrays.stream(response.result()).anyMatch(update -> update == null || update.update_id() == null)) {
-            throw new IllegalStateException("Telegram update is missing its ID");
-        }
-        return Arrays.asList(response.result());
     }
 
     @Override
     public void sendMessage(String chatId, String text) {
-        TelegramDtos.SendResponse response = client.post().uri("/sendMessage")
+        TelegramBotResponse response = client.post().uri("/sendMessage")
                 .body(Map.of("chat_id", chatId, "text", text))
-                .retrieve().body(TelegramDtos.SendResponse.class);
+                .retrieve().body(TelegramBotResponse.class);
         if (response == null || !response.ok()) {
             throw new IllegalStateException("Invalid Telegram sendMessage response");
         }

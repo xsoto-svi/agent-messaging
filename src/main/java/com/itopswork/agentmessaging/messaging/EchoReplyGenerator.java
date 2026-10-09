@@ -1,6 +1,5 @@
-package com.itopswork.agentmessaging.ai;
+package com.itopswork.agentmessaging.messaging;
 
-import com.itopswork.agentmessaging.messaging.ReplyGenerator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 

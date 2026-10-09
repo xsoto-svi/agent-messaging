@@ -1,10 +1,13 @@
-package com.itopswork.agentmessaging.telegram;
+package com.itopswork.agentmessaging.telegram.webhook;
 
 import com.itopswork.agentmessaging.messaging.MessagingService;
-import com.itopswork.agentmessaging.model.IncomingMessage;
+import com.itopswork.agentmessaging.messaging.IncomingMessage;
+import com.itopswork.agentmessaging.telegram.TelegramApi;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(name = "app.telegram.enabled", havingValue = "true", matchIfMissing = true)
 public class TelegramUpdateHandler {
     private final TelegramApi api;
     private final MessagingService messagingService;
@@ -14,8 +17,8 @@ public class TelegramUpdateHandler {
         this.messagingService = messagingService;
     }
 
-    public void receive(TelegramDtos.Update update) {
-        TelegramDtos.Message message = update.message();
+    public void receive(TelegramUpdate update) {
+        TelegramUpdate.Message message = update.message();
         if (message == null || message.chat() == null || message.chat().id() == null) {
             return;
         }
